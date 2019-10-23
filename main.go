@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -20,9 +21,18 @@ type RecordEntry struct {
 	Service   string
 }
 
+var (
+	version = "unknown"
+)
+
 func main() {
+	showVersion := flag.Bool("version", false, "Show version number")
 	configPath := flag.String("config", "", "Config file path")
 	flag.Parse()
+	if *showVersion {
+		fmt.Println(version)
+		return
+	}
 	if *configPath == "" {
 		log.Fatalln("-config must be set")
 	}
@@ -49,6 +59,8 @@ func main() {
 	for _, svc := range svcs {
 		go monitor(svc, notify)
 	}
+
+	log.Printf("Hobson %v started", version)
 
 	log.Printf("Beginning monitoring of Consul services (%s)",
 		strings.Join(config.Services, ","))
