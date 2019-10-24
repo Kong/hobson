@@ -5,5 +5,6 @@ go 1.12
 require (
 	github.com/hashicorp/consul/api v1.2.0
 	github.com/miekg/dns v1.0.14
+	github.com/prometheus/client_golang v1.2.1
 	gopkg.in/yaml.v2 v2.2.4
 )

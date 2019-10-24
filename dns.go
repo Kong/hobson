@@ -49,6 +49,8 @@ func (h *DNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 			},
 			A: net.ParseIP(address),
 		})
+
+		RecordLastServed.WithLabelValues(domain, address).SetToCurrentTime()
 	}
 	w.WriteMsg(&msg)
 }

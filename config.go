@@ -3,14 +3,16 @@ package main
 import (
 	"errors"
 
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	"gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Bind     string   `yaml:"bind"`
-	Zone     string   `yaml:"zone"`
-	Services []string `yaml:"services"`
+	Bind          string   `yaml:"bind"`
+	MetricsListen string   `yaml:"metrics_listen"`
+	Zone          string   `yaml:"zone"`
+	Services      []string `yaml:"services"`
 }
 
 func validateConfig(c *Config) error {
@@ -20,6 +22,10 @@ func validateConfig(c *Config) error {
 
 	if c.Zone == "" {
 		return errors.New("'Zone' is not set")
+	}
+
+	if c.MetricsListen == "" {
+		c.MetricsListen = ":9234"
 	}
 
 	if len(c.Services) == 0 {

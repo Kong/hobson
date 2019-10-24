@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
 	"sort"
@@ -42,11 +43,17 @@ func main() {
 		log.Fatalln("Error loading config:", err)
 	}
 
+	log.Printf("Hobson %v started", version)
+
 	srv := &dns.Server{Addr: config.Bind, Net: "udp"}
 	h := NewDNSHandler(config.Zone)
 	srv.Handler = h
 
+	var wg sync.WaitGroup
+
 	go func() {
+		wg.Add(1)
+		defer wg.Done()
 		log.Println("Answer queries for zone", config.Zone)
 		log.Println("Starting DNS server on", config.Bind)
 		if err := srv.ListenAndServe(); err != nil {
@@ -57,10 +64,27 @@ func main() {
 	svcs := config.Services
 	notify := make(chan *RecordEntry)
 	for _, svc := range svcs {
-		go monitor(svc, notify)
+		go func(s string, n chan *RecordEntry) {
+			ServiceMonitorRunning.WithLabelValues(s).Set(1)
+			defer ServiceMonitorRunning.WithLabelValues(s).Set(0)
+			monitor(s, n)
+		}(svc, notify)
+
 	}
 
-	log.Printf("Hobson %v started", version)
+	ms := NewMeticsServer(&MetricsServerConfig{
+		ListenAddress: config.MetricsListen,
+	})
+	ms.RegisterMetrics()
+
+	go func() {
+		wg.Add(1)
+		defer wg.Done()
+		log.Println("Starting metrics server on", config.MetricsListen)
+		if err := ms.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("Failed to start metrics server %s\n", err.Error())
+		}
+	}()
 
 	log.Printf("Beginning monitoring of Consul services (%s)",
 		strings.Join(config.Services, ","))
@@ -74,6 +98,8 @@ func main() {
 				log.Printf("No records for service %q", a.Service)
 				continue
 			}
+
+			ServiceLastUpdate.WithLabelValues(a.Service).SetToCurrentTime()
 
 			sort.Strings(t)
 			h.UpdateRecord(a.Service, t)
@@ -89,16 +115,20 @@ func main() {
 	defer cancel()
 
 	waitCh := make(chan struct{})
-	var wg sync.WaitGroup
-	go func() {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := srv.ShutdownContext(ctx); err != nil {
-				log.Println("Error shutting down DNS server:", err)
-			}
-		}()
 
+	go func() {
+		if err := srv.ShutdownContext(ctx); err != nil {
+			log.Println("Error shutting down DNS server:", err)
+		}
+	}()
+
+	go func() {
+		if err := ms.ShutdownContext(ctx); err != nil {
+			log.Println("Error shutting down DNS server:", err)
+		}
+	}()
+
+	go func() {
 		wg.Wait()
 		close(waitCh)
 	}()
