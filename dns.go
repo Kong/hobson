@@ -49,6 +49,8 @@ func (h *DNSHandler) ServeDNS(w dns.ResponseWriter, r *dns.Msg) {
 			},
 			A: net.ParseIP(address),
 		})
+
+		RecordServedCount.WithLabelValues(domain, address).Inc()
 	}
 	w.WriteMsg(&msg)
 }
@@ -65,6 +67,8 @@ func (h *DNSHandler) UpdateRecord(service string, records []string) {
 			return
 		}
 	}
+
+	ServiceLastUpdate.WithLabelValues(service).SetToCurrentTime()
 
 	newRecord := records[0]
 	log.Printf("Updating service map record %s (%s)", service, newRecord)

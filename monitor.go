@@ -23,6 +23,7 @@ func monitor(svc string, notify chan<- *RecordEntry) {
 		})
 		if err != nil {
 			log.Println(err)
+			ServiceFetchFailures.WithLabelValues(svc).Inc()
 			n += 1
 			sleep := math.Min(math.Pow(2, float64(n))*backoffBase, backoffMax)
 			time.Sleep(time.Millisecond * time.Duration(sleep))
