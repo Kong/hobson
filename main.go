@@ -72,7 +72,7 @@ func main() {
 
 	}
 
-	ms := NewMeticsServer(&MetricsServerConfig{
+	ms := NewMetricsServer(&MetricsServerConfig{
 		ListenAddress: config.MetricsListen,
 	})
 	ms.RegisterMetrics()
@@ -98,8 +98,6 @@ func main() {
 				log.Printf("No records for service %q", a.Service)
 				continue
 			}
-
-			ServiceLastUpdate.WithLabelValues(a.Service).SetToCurrentTime()
 
 			sort.Strings(t)
 			h.UpdateRecord(a.Service, t)

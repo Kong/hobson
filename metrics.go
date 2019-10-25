@@ -12,7 +12,7 @@ var (
 	ServiceMonitorRunning = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: "hobson_service_monitor_running",
-			Help: "The number of monitors hobson is running for a service (should normally be one)",
+			Help: "The number of monitors hobson is running for a service",
 		},
 		[]string{"service"},
 	)
@@ -33,10 +33,10 @@ var (
 		[]string{"service"},
 	)
 
-	RecordLastServed = prometheus.NewGaugeVec(
-		prometheus.GaugeOpts{
-			Name: "hobson_record_last_served_timstamp",
-			Help: "Timestamp of the service with specified record returned",
+	RecordServedCount = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "hobson_record_served_count",
+			Help: "Counts of record served per domain",
 		},
 		[]string{"domain", "record"},
 	)
@@ -47,11 +47,10 @@ type MetricsServerConfig struct {
 }
 
 type MetricsServer struct {
-	listenAddress string
-	http          *http.Server
+	http *http.Server
 }
 
-func NewMeticsServer(c *MetricsServerConfig) *MetricsServer {
+func NewMetricsServer(c *MetricsServerConfig) *MetricsServer {
 	prom := promhttp.Handler()
 
 	http.HandleFunc("/metrics", prom.ServeHTTP)
