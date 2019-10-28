@@ -78,7 +78,7 @@ func (m *MetricsServer) RegisterMetrics() {
 		ServiceMonitorRunning,
 		ServiceLastUpdate,
 		ServiceFetchFailures,
-		RecordLastServed)
+		RecordServedCount)
 }
 
 func (m *MetricsServer) ListenAndServe() error {
