@@ -6,8 +6,10 @@ bin:
 unit:
 	go test -race $(shell go list ./... | grep -v e2e)
 
-e2e:
-	go test -race $(shell go list ./... | grep e2e)
+e2e: bin
+	./hobson -config e2e/fixtures/hobson.yaml &
+	go test -race -count=1 -p 1 -v $(shell go list ./... | grep e2e)
+	pkill -kill hobson
 
 vet:
 	go vet ./...

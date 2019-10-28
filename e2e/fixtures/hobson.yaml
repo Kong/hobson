@@ -1,0 +1,6 @@
+bind: :5300
+metrics_listen: :9234
+zone: foo
+services:
+  - service1
+  - service2
